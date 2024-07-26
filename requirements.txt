@@ -1,0 +1,6 @@
+python-dotenv
+langchain-community
+langchain-core
+langchain-text-splitters
+langchain-chroma
+langchain-openai
