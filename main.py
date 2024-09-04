@@ -1,16 +1,15 @@
 # Importing necessary libraries
 import os
+
 from dotenv import load_dotenv
-from langchain_community.document_loaders import UnstructuredMarkdownLoader
-from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
-from langchain import hub
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
+from langchain_community.document_loaders import PyPDFLoader
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
+from langchain_openai import OpenAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Load environment variables from .env file
 load_dotenv()
@@ -19,27 +18,24 @@ load_dotenv()
 api_key = os.getenv('OPENAI_API_KEY')
 
 # Loading files
-markdown_path = "the_fall_of_anakin_skywalker.md"
-loader = UnstructuredMarkdownLoader(markdown_path)
+file_path = (
+    "FILE_PATH"
+)
+loader = PyPDFLoader(file_path)
+pages = loader.load()
 
-doc = loader.load()
-assert len(doc) == 1
-assert isinstance(doc[0], Document)
-markdown_content = doc[0].page_content
-print(markdown_content[:250])
-
-# Spliting text into chunks
+# Splitting text into chunks
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1000,
     chunk_overlap=200,
     add_start_index=True
 )
-all_splits = text_splitter.split_documents(doc)
+all_splits = text_splitter.split_documents(pages)
 len(all_splits)
 
 # Storing documents in Chroma
 vectorstore = Chroma.from_documents(
-    documents=all_splits, 
+    documents=all_splits,
     embedding=OpenAIEmbeddings()
 )
 
@@ -49,32 +45,36 @@ retriever = vectorstore.as_retriever(
     search_kwargs={"k": 3})
 
 # Generating a response
-llm = ChatOpenAI(model="gpt-4o-mini") # Create ChatOpenAI instance
+llm = ChatOpenAI(model="gpt-4o-mini")  # Create ChatOpenAI instance
 
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
-template = """Use the following pieces of context to answer the question at the end.
-If you don't know the answer, just say that you don't know, don't try to make up an answer.
-Use three sentences maximum and keep the answer as concise as possible.
-Always say "thanks for asking!" at the end of the answer.
-
-{context}
-
-Question: {question}
-
-Helpful Answer:"""
-custom_rag_prompt = PromptTemplate.from_template(template)
-
-rag_chain = (
-    {"context": retriever | format_docs, "question": RunnablePassthrough()}
-    | custom_rag_prompt
-    | llm
-    | StrOutputParser()
+system_prompt = (
+    "You are an assistant for question-answering tasks. "
+    "Use the following pieces of retrieved context to answer "
+    "the question. If you don't know the answer, say that you "
+    "don't know. Use three sentences maximum and keep the "
+    "answer concise."
+    "\n\n"
+    "{context}"
 )
 
-try:
-    response = rag_chain.invoke("How did Anakin become Darth Vader?")
-    print(response)
-except Exception as e:
-    print(f"An error occurred: {e}")
+prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system_prompt),
+        ("human", "{input}"),
+    ]
+)
+
+question_answer_chain = create_stuff_documents_chain(llm, prompt)
+rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+
+question_answer_chain = create_stuff_documents_chain(llm, prompt)
+rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+
+result = rag_chain.invoke({"input": "YOUR QUESTION"})
+
+print(f"Question: {result['input']}")
+print(f"Sources: {result['context']}")
+print(f"Answer: {result['answer']}")
