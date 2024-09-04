@@ -22,5 +22,5 @@ This Python script demonstrates a Retrieval-Augmented Generation (RAG) applicati
 ## Resources
 
 - LangChain RAG Tutorial: [https://python.langchain.com/v0.2/docs/tutorials/rag/#detailed-walkthrough](https://python.langchain.com/v0.2/docs/tutorials/rag/#detailed-walkthrough)
-- LangChain Markdown Document Loader Documentation: [https://python.langchain.com/v0.2/docs/how_to/document_loader_markdown/](https://python.langchain.com/v0.2/docs/how_to/document_loader_markdown/)
-- RAG + Langchain Python Project: Easy AI/Chat For Your Docs Youtube Video: [https://www.youtube.com/watch?v=tcqEUSNCn8I&t=252s](https://www.youtube.com/watch?v=tcqEUSNCn8I&t=252s)
+- LangChain PDF Loader Documentation: [https://python.langchain.com/v0.2/docs/how_to/document_loader_pdf/](https://python.langchain.com/v0.2/docs/how_to/document_loader_pdf/)
+- RAG + Langchain Python Project: Easy AI/Chat For Your Docs YouTube Video: [https://www.youtube.com/watch?v=tcqEUSNCn8I&t=252s](https://www.youtube.com/watch?v=tcqEUSNCn8I&t=252s)
